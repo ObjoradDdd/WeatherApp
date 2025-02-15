@@ -1,9 +1,12 @@
 package obj.study
 
+import ParsingData
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.benchmark.argumentSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +29,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,33 +43,28 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.room.Dao
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import obj.study.ui.theme.Pink80
 import obj.study.ui.theme.Purple40
 
 
 
-class StartScreenActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            StartScreen()
-        }
-    }
-}
-
-
-@Preview
 @Composable
-fun StartScreen(
-    availableItems: List<String> = listOf(
-        "Железногорск",
-        "Москва",
-        "Томск",
-        "Tula"
-    ),
+fun StartScreen( navController: NavController,
+                 weatherDao : WeatherDao,
+                 availableItems: List<String> = listOf(
+                    "Железногорск",
+                    "Москва",
+                    "Томск",
+                    "Кемерово",
+                    "Новосибирск"
+                ),
 ) {
 
-    val context = LocalContext.current
 
     var searchText by remember { mutableStateOf("") }
 
@@ -76,7 +75,7 @@ fun StartScreen(
     if (searchText.isBlank()) {
         filteredItems = availableItems
     } else {
-        filteredItems = availableItems.filter { it.contains(searchText, ignoreCase = true) }
+        filteredItems = availableItems.filter { (it.contains(searchText, ignoreCase = true) or (it in selectedItems))}
     }
 
 
@@ -103,36 +102,6 @@ fun StartScreen(
                 .background(color = Purple40, shape = RoundedCornerShape(10.dp))
         )
 
-        if (selectedItems.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    for (item in selectedItems) {
-                        Card(
-                            elevation = CardDefaults.cardElevation(7.dp)
-                        ) {
-                            Text(
-                                fontSize = 30.sp,
-                                color = Color.White,
-                                text = item,
-                                modifier = Modifier
-                                    .background(color = Purple40, shape = RoundedCornerShape(10.dp))
-                                    .padding(end = 8.dp)
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-
-        // Прокручиваемый список
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -160,12 +129,11 @@ fun StartScreen(
                             checked = isSelected,
                             onCheckedChange = { checked ->
                                 if (checked) {
-                                    // Добавить в выбранные
                                     if (item !in selectedItems) {
                                         selectedItems.add(item)
                                     }
                                 } else {
-                                    // Убрать из выбранных
+
                                     selectedItems.remove(item)
                                 }
                             }
@@ -189,12 +157,15 @@ fun StartScreen(
 
 
         Button(onClick = {
-            val intent = Intent(context, Main1::class.java)
-            intent.putStringArrayListExtra("selectedItemsKey", ArrayList(selectedItems))
-            context.startActivity(intent)
-        }) {
-            Text(text = "Открыть SecondActivity")
+            CoroutineScope(Dispatchers.IO).launch {
+                for (locate in selectedItems) {
+                    weatherDao.insert(Cities(city = locate))
+                }
+            }
+            navController.navigate("Main")
+        })
+        {
+            Text(text = "Выбрать", color = Color.White)
         }
-
     }
 }

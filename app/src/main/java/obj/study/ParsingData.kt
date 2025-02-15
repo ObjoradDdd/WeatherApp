@@ -1,16 +1,22 @@
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity
 data class ParsingData(
-    val queryCost: Long = 0,
-    val latitude: Double = 0.0,
-    val longitude: Double = 0.0,
-    val resolvedAddress: String = "",
-    val address: String = "",
-    val timezone: String = "",
-    val tzoffset: Double = 0.0,
-    val description: String = "",
-    val days: List<Day> = emptyList<Day>(),
-    val alerts: List<Any?> = emptyList(),
-    val stations: Stations = Stations(),
-    val currentConditions: CurrentConditions = CurrentConditions(),
+    @PrimaryKey(autoGenerate = true) val id : Int = 0,
+    @ColumnInfo val queryCost: Long = 0,
+    @ColumnInfo val latitude: Double = 0.0,
+    @ColumnInfo val longitude: Double = 0.0,
+    @ColumnInfo val resolvedAddress: String = "",
+    @ColumnInfo val address: String = "",
+    @ColumnInfo val timezone: String = "",
+    @ColumnInfo val tzoffset: Double = 0.0,
+    @ColumnInfo val description: String = "",
+    @ColumnInfo val days: List<Day> = emptyList(),
+    @ColumnInfo val alerts: List<Any?> = emptyList(),
+    @ColumnInfo val stations: Stations = Stations(),
+    @ColumnInfo val currentConditions: CurrentConditions = CurrentConditions(),
 )
 
 data class Day(

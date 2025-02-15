@@ -21,13 +21,8 @@
             android:theme="@style/Theme.Study">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".Main1"
-            android:label="Main1">
         </activity>
     </application>
 

@@ -6,6 +6,6 @@ import retrofit2.http.Path
 
 interface Api {
 
-    @GET("{location}/today?unitGroup=metric&key=NJXDEEW8R6FU4WACEHBKRASWB&contentType=json")
+    @GET("{location}/next7days?unitGroup=metric&key=RL8PKJNAMHCHAPQVLFTMJCZMT&contentType=json")
     suspend fun getWeather(@Path("location") location: String): ParsingData
 }

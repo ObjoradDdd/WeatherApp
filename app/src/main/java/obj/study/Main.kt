@@ -1,12 +1,7 @@
 package obj.study
 
 import Hour
-import ParsingData
-import android.content.res.Resources
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.viewModels
+import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,70 +9,56 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import me.saket.swipe.SwipeAction
-import me.saket.swipe.SwipeableActionsBox
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import obj.study.ui.theme.Pink80
 import obj.study.ui.theme.Purple20
 import obj.study.ui.theme.Purple40
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 
-class Main1 : ComponentActivity() {
-    private val mainViewModel by viewModels<MainViewModel>()
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            Main(mainViewModel)
-        }
-    }
-}
-
+@SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Main(viewModel: MainViewModel) {
-    val context = LocalContext.current
-    val activity = context as? Main1
-
-    val locations = activity?.intent?.getStringArrayListExtra("selectedItemsKey") ?: arrayListOf()
-
-    var loc by remember { mutableStateOf(0) }
-
-    viewModel.getApiData(locations[loc])
-
+fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
     val state = viewModel.temp.collectAsState()
 
-    val pages = remember {  }
+    CoroutineScope(Dispatchers.IO).launch {
+        viewModel.getApiDatas(weatherDao.getAll())
+    }
 
-    val pagerState = rememberPagerState {locations.size}
-    if (state.value != ParsingData()) {
-        HorizontalPager(pagerState) {
+    if (state.value.isNotEmpty()) {
+        val pagerState = rememberPagerState { state.value.size }
+        HorizontalPager(pagerState) { index ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -88,12 +69,12 @@ fun Main(viewModel: MainViewModel) {
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(20.dp)
+                        .height(24.dp)
                 )
 
                 Text(
-                    text = state.value.address,
-                    fontSize = 30.sp,
+                    text = state.value[index].address,
+                    fontSize = 25.sp,
                     color = Color.White,
                 )
 
@@ -104,7 +85,7 @@ fun Main(viewModel: MainViewModel) {
                 )
 
                 Text(
-                    text = "${state.value.days.get(0).temp}°",
+                    text = "${state.value[index].days.get(0).temp.toInt()}°",
                     fontSize = 150.sp,
                     color = Color.White,
                     modifier = Modifier
@@ -126,7 +107,7 @@ fun Main(viewModel: MainViewModel) {
                     ) {
                         Text(
                             modifier = Modifier.padding(start = 10.dp),
-                            text = "${state.value.days.get(0).tempmin}°",
+                            text = "${state.value[index].days.get(0).tempmin}°",
                             fontSize = 40.sp,
                             color = Color.White
                         )
@@ -139,7 +120,7 @@ fun Main(viewModel: MainViewModel) {
                     ) {
                         Text(
                             modifier = Modifier.padding(start = 10.dp),
-                            text = "${state.value.days.get(0).tempmax}°",
+                            text = "${state.value[index].days.get(0).tempmax}°",
                             fontSize = 40.sp,
                             color = Color.White
                         )
@@ -159,7 +140,7 @@ fun Main(viewModel: MainViewModel) {
                 ) {
 
 
-                    val hours: List<Hour> = state.value.days.get(0).hours
+                    val hours: List<Hour> = state.value[index].days.get(0).hours
 
 
                     itemsIndexed(hours) { time, hour ->
@@ -192,7 +173,85 @@ fun Main(viewModel: MainViewModel) {
                         }
                     }
                 }
+
+                Card(
+                    modifier = Modifier
+                        .padding(top = 30.dp, start = 10.dp, end = 10.dp, bottom = 30.dp)
+                        .fillMaxHeight()
+                        .fillMaxWidth()
+                ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .background(color = Purple20)
+                            .fillMaxSize(),
+
+                        verticalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        itemsIndexed(state.value[index].days) { fs, day ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                var topPadding = 0
+                                if (fs == 0){
+                                    topPadding = 10
+                                }
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    if (fs == 0) {
+                                        Text(
+                                            text = "сегодня",
+                                            fontSize = 25.sp,
+                                            color = Color.White,
+                                            modifier = Modifier
+                                                .padding(start = 15.dp, top = topPadding.dp)
+                                        )
+                                    } else {
+                                        Text(
+                                            text = LocalDate.now()
+                                                .plusDays(fs.toLong()).dayOfWeek.getDisplayName(
+                                                    TextStyle.FULL,
+                                                    Locale("ru"),
+                                                ),
+                                            modifier = Modifier
+                                                .padding(start = 15.dp),
+                                            fontSize = 25.sp,
+                                            color = Color.White
+
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(15.dp))
+
+                                    val dayNum = day.datetime.split("-")[2]
+                                    val monthNum = day.datetime.split("-")[1]
+                                    Text(
+                                        text = "$dayNum.$monthNum",
+                                        fontSize = 20.sp,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(top = topPadding.dp, bottom = 1.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "${day.temp}°",
+                                    color = Color.White,
+                                    fontSize = 25.sp,
+                                    modifier = Modifier
+                                        .padding(end = 15.dp, top = topPadding.dp)
+
+                                )
+                            }
+                            Divider(
+                                modifier = Modifier
+                                    .padding(start = 30.dp, end = 30.dp, top = 10.dp)
+                            )
+                        }
+                    }
+                }
+
+
             }
+
         }
     }
 }
