@@ -23,7 +23,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
@@ -49,12 +47,14 @@ import java.util.Locale
 @SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
+fun Main(viewModel: MainViewModel, locationsSettings: LocationsSettings) {
+
     val state = viewModel.temp.collectAsState()
 
     CoroutineScope(Dispatchers.IO).launch {
-        viewModel.getApiDatas(weatherDao.getAll())
+        viewModel.getApiDatas(locationsSettings.getLocationList())
     }
+
 
     if (state.value.isNotEmpty()) {
         val pagerState = rememberPagerState { state.value.size }
@@ -64,8 +64,7 @@ fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
                     .fillMaxSize()
                     .background(brush = Brush.verticalGradient(colors = listOf(Purple40, Pink80))),
                 horizontalAlignment = Alignment.CenterHorizontally
-            )
-            {
+            ) {
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -88,8 +87,7 @@ fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
                     text = "${state.value[index].days.get(0).temp.toInt()}°",
                     fontSize = 150.sp,
                     color = Color.White,
-                    modifier = Modifier
-                        .padding(start = 37.dp)
+                    modifier = Modifier.padding(start = 37.dp)
                 )
 
                 Spacer(
@@ -135,8 +133,7 @@ fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
                 )
 
                 LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
 
 
@@ -176,9 +173,12 @@ fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
 
                 Card(
                     modifier = Modifier
-                        .padding(top = 30.dp, start = 10.dp, end = 10.dp, bottom = 30.dp)
+                        .padding(
+                            top = 30.dp, start = 10.dp, end = 10.dp, bottom = 30.dp
+                        )
                         .fillMaxHeight()
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(15.dp)
                 ) {
                     LazyColumn(
                         modifier = Modifier
@@ -189,12 +189,11 @@ fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
                     ) {
                         itemsIndexed(state.value[index].days) { fs, day ->
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 var topPadding = 0
-                                if (fs == 0){
+                                if (fs == 0) {
                                     topPadding = 10
                                 }
                                 Row(verticalAlignment = Alignment.Bottom) {
@@ -203,8 +202,10 @@ fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
                                             text = "сегодня",
                                             fontSize = 25.sp,
                                             color = Color.White,
-                                            modifier = Modifier
-                                                .padding(start = 15.dp, top = topPadding.dp)
+                                            modifier = Modifier.padding(
+                                                    start = 15.dp,
+                                                    top = topPadding.dp
+                                                )
                                         )
                                     } else {
                                         Text(
@@ -213,8 +214,7 @@ fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
                                                     TextStyle.FULL,
                                                     Locale("ru"),
                                                 ),
-                                            modifier = Modifier
-                                                .padding(start = 15.dp),
+                                            modifier = Modifier.padding(start = 15.dp),
                                             fontSize = 25.sp,
                                             color = Color.White
 
@@ -229,21 +229,21 @@ fun Main(viewModel: MainViewModel, weatherDao: WeatherDao) {
                                         text = "$dayNum.$monthNum",
                                         fontSize = 20.sp,
                                         color = Color.White,
-                                        modifier = Modifier.padding(top = topPadding.dp, bottom = 1.dp)
+                                        modifier = Modifier.padding(
+                                            top = topPadding.dp, bottom = 1.dp
+                                        )
                                     )
                                 }
                                 Text(
                                     text = "${day.temp}°",
                                     color = Color.White,
                                     fontSize = 25.sp,
-                                    modifier = Modifier
-                                        .padding(end = 15.dp, top = topPadding.dp)
+                                    modifier = Modifier.padding(end = 15.dp, top = topPadding.dp)
 
                                 )
                             }
-                            Divider(
-                                modifier = Modifier
-                                    .padding(start = 30.dp, end = 30.dp, top = 10.dp)
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 30.dp, end = 30.dp, top = 10.dp)
                             )
                         }
                     }
